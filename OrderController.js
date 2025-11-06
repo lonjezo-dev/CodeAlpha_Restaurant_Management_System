@@ -19,6 +19,15 @@ const createOrder = (req, res)=>{
 
 
 const getAllOrders = (req, res) =>{
+    Order.findAll({
+        attributes: ['order_status', 'total_amount', 'order_time', 'table_id']
+    })
+    .then((orders) => {
+        res.json(orders);               
+
+    }).catch((error) => {
+        res.status(500).json({ error: 'Failed to retrieve orders',error });
+    });
     //pass
 }
 
