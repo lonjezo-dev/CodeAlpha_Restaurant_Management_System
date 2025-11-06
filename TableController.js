@@ -1,3 +1,4 @@
+const e = require("express");
 const {Table} = require("./model/Table");
 
 // create Table controller function accessed by restaurant staff
@@ -18,7 +19,15 @@ const getTable = (req, res) =>{
 }
 
 const getAllTables = (req, res) =>{
-    pass
+    // fetch all tables from the database
+    Table.findAll({
+        attributes:['table_number', 'capacity', 'status']
+    }).then((result)=>{
+        return res.json(result);
+    }).catch((error)=>{
+        console.log(error);
+         return res.status(500).json({error: "Unable to fetch tables"});
+    })
 }
 
 const updateTable = (req, res) =>{
