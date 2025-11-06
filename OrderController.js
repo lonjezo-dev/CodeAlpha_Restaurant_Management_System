@@ -46,6 +46,23 @@ const getOrderById = (req, res) =>{
 }
 
 const updateOrder = (req, res) =>{
+    Order.update(
+        {
+            order_status: req.body.order_status,
+            total_amount: req.body.total_amount,
+            order_time: req.body.order_time,
+            table_id: req.body.table_id
+        },{
+            where: {
+                id: req.params.id,
+            },
+        })
+        .then(() => {
+            res.json({ message: "Order updated successfully" });
+        })
+        .catch((error) => {
+            res.status(500).json({ error: "Failed to update order",error });
+        });
     //pass
 }
 
