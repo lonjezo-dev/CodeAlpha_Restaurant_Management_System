@@ -15,7 +15,17 @@ const createTable = (req, res) =>{
 }
 
 const getTable = (req, res) =>{
-    pass
+    // get table id from request params
+    const id = req.params.id;
+    Table.findByPk(id,{
+        attributes: ['table_number', 'capacity', 'status'],
+    })
+    .then((table) => {
+        res.json(table);
+    })
+    .catch((error) => {
+        res.status(500).json({ error: "Failed to retrieve table" });
+    });
 }
 
 const getAllTables = (req, res) =>{
