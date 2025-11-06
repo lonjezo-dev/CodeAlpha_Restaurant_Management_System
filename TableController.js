@@ -41,7 +41,22 @@ const getAllTables = (req, res) =>{
 }
 
 const updateTable = (req, res) =>{
-
+    Table.update(
+        {
+            table_number: req.body.table_number,
+            capacity: req.body.capacity,
+            status: req.body.status,
+        },{
+            where: {
+                id: req.params.id,
+            },
+        })
+        .then(() => {
+            res.json({ message: "Table updated successfully" });
+        })
+        .catch((error) => {
+            res.status(500).json({ error: "Failed to update table" });
+        });
 }
 
 const deleteTable = (req, res) =>{
