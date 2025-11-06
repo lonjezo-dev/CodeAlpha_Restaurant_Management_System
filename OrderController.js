@@ -28,11 +28,21 @@ const getAllOrders = (req, res) =>{
     }).catch((error) => {
         res.status(500).json({ error: 'Failed to retrieve orders',error });
     });
-    //pass
+  
 }
 
 const getOrderById = (req, res) =>{
-    //pass
+    const id = req.params.id;
+    Order.findByPk(id,{
+        attributes: ['order_status', 'total_amount', 'order_time', 'table_id']
+    })
+    .then((order) => {
+        res.json(order);
+    })
+    .catch((error) => {
+        res.status(500).json({ error: 'Failed to retrieve order',error });
+    });
+  
 }
 
 const updateOrder = (req, res) =>{
