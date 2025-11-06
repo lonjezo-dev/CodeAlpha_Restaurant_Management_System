@@ -60,7 +60,17 @@ const updateTable = (req, res) =>{
 }
 
 const deleteTable = (req, res) =>{
-    pass
+    Table.destroy({
+        where: {
+            id: req.params.id,
+        },
+    })
+    .then(() => {
+        res.json({ message: "Table deleted successfully" });
+    })
+    .catch((error) => {
+        res.status(500).json({ error: "Failed to delete table" });
+    });
 }
 
 module.exports = { createTable,getTable, getAllTables,updateTable, deleteTable}
