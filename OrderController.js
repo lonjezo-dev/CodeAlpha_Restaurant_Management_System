@@ -67,6 +67,17 @@ const updateOrder = (req, res) =>{
 }
 
 const deleteorder = (req, res)=>{
+    Order.destroy({
+        where: {
+            id: req.params.id,
+        },
+    })
+    .then(() => {
+        res.json({ message: "Order deleted successfully" });
+    })
+    .catch((error) => {
+        res.status(500).json({ error: "Failed to delete order",error });
+    });
     //pass
 }
 
