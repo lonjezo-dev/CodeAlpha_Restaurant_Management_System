@@ -1,6 +1,11 @@
-const MenuItem = require("./model/MenuItem");
-const { createMenuItem, getAllMenuItems, getMenuItem, updateMenuItem, deleteMenuItem, deleteAllMenuItems } = require("./controller");
+// const MenuItem = require("./model/MenuItem");
+const { createMenuItem, getAllMenuItems, getMenuItem, updateMenuItem, deleteMenuItem, deleteAllMenuItems } = require("./controllers/MenuItemController");
 const express = require("express");
+const { createTable,  getAllTables, getTable, updateTable, deleteTable} = require("./controllers/TableController");
+const { createOrder, getAllOrders, getOrderById, updateOrder, deleteorder } = require("./controllers/OrderController");
+const { createOrderItem, getAllOrderItems, getOrderItemById, updateOrderItem, deleteOrderItem } = require("./controllers/OrderItemController");
+const { createReservation, getAllReservations, getReservationById, updateReservation, deleteReservation } = require("./controllers/ReservationController");
+const { createInventoryItem, getAllInventoryItems, getInventoryItemById, updateInventoryItem, deleteInventoryItem } = require("./controllers/InventoryController");
 const router = express.Router();
 
 // Create a new menu item
@@ -20,5 +25,36 @@ router.delete("/menu-items/:id", deleteMenuItem); // deleteMenuItem(req, res)
 
 // Delete all menu items
 router.delete("/menu-items", deleteAllMenuItems); // deleteAllMenuItems(req, res)
+
+router.post("/table", createTable);  // createTable(req, res)
+router.get("/table",  getAllTables); // getAllTables(req, res)
+router.get("/table/:id", getTable); // getAllTable by an id(req, res) 
+router.put("/table/:id", updateTable); // updateTable by an id(req, res)
+router.delete("/table/:id", deleteTable); // deleteTable by an id(req, res)
+
+router.post("/order", createOrder);  // createOrder(req, res)
+router.get("/order",  getAllOrders); // getAllOrders(req, res)
+router.get("/order/:id", getOrderById); // getOrderById by an id(req, res) 
+router.put("/order/:id", updateOrder); // updateOrder by an id(req, res)
+router.delete("/order/:id", deleteorder); // deleteorder by an id(req, res)
+
+
+router.post("/order-item", createOrderItem);  // createOrderItem(req, res)
+router.get("/order-item",  getAllOrderItems); // getAllOrderItems(req, res)
+router.get("/order-item/:id", getOrderItemById); // getOrderById by an id(req, res) 
+router.put("/order-item/:id", updateOrderItem); // updateOrderItem by an id(req, res)
+router.delete("/order-item/:id", deleteOrderItem); // deleteOrderItem by an id(req, res)
+
+router.get("/reservations", getAllReservations); // getAllReservations(req, res)
+router.post("/reservations", createReservation); // createReservation(req, res)
+router.get("/reservations/:id", getReservationById); // getReservationById(req, res)
+router.put("/reservations/:id", updateReservation); // updateReservation(req, res)
+router.delete("/reservations/:id", deleteReservation); // deleteReservation(req, res)
+
+router.post("/inventory", createInventoryItem);  // createInventoryItem(req, res)
+router.get("/inventory",  getAllInventoryItems); // getAllInventoryItems(req, res)
+router.get("/inventory/:id", getInventoryItemById); // getInventoryItemById by an id(req, res) 
+router.put("/inventory/:id", updateInventoryItem); // updateInventoryItem by an id(req, res)
+router.delete("/inventory/:id", deleteInventoryItem); // deleteInventoryItem by an id(req, res)
 
 module.exports = router;

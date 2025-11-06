@@ -1,4 +1,4 @@
-const { Order_Item } = require("./model/Order_Item");
+const { Order_Item } = require("../model/Order_Item");
 
 
 // Create a new order item

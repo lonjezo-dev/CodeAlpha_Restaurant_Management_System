@@ -1,4 +1,4 @@
-const { Order } = require('./model/Order');
+const { Order } = require('../model/Order');
 
 const createOrder = (req, res)=>{
     const { order_status, total_amount,order_time, table_id } = req.body;

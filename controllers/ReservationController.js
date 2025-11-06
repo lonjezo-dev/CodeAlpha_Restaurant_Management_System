@@ -1,4 +1,4 @@
-const { Reservation } = require("./model/Reservation");
+const { Reservation } = require("../model/Reservation");
 
 // Create a new reservation
 const createReservation =  (req, res) => {

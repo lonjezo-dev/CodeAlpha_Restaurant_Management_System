@@ -1,4 +1,4 @@
-const { FOREIGNKEYS } = require("sequelize/lib/query-types");
+// const { FOREIGNKEYS } = require("sequelize/lib/query-types");
 const sequelize = require("../config/database");
 const { DataTypes } = require("sequelize");
 const { Table } = require("./Table");

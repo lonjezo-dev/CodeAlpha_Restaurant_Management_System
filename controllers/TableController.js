@@ -1,5 +1,5 @@
 const e = require("express");
-const {Table} = require("./model/Table");
+const {Table} = require("../model/Table");
 
 // create Table controller function accessed by restaurant staff
 const createTable = (req, res) =>{

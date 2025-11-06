@@ -1,6 +1,6 @@
 const sequelize = require("../config/database");
 const {Table } = require("./Table");
-const { DataTypes, ENUM } = require("sequelize");
+const { DataTypes} = require("sequelize");
 
 const Reservation = sequelize.define("Reservation", {
    // Each attribute will pair with a column

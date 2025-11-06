@@ -1,5 +1,5 @@
 // const { where } = require("sequelize");
-const { MenuItem } = require("./model/MenuItem");
+const { MenuItem } = require("../model/MenuItem");
 
 const createMenuItem = (req, res) => {
      // Call the create function on the Menu Item model, and pass the data that you receive.
