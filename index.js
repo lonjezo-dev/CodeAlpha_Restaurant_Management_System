@@ -5,7 +5,7 @@ const { Table } = require("./model/Table");
 const { Order } = require("./model/Order");
 const { Order_Item } = require("./model/Order_Item");
 const { Reservation } = require("./model/Reservation");
-const { Inventory } = require("./controllers/Inventory");
+const { Inventory } = require("./model/Inventory");
 const app = express();
 const port = 3001;
 
@@ -17,12 +17,13 @@ const initApp = async () => {
 
 
       // synchronize all defined models to the DB.
-      await MenuItem.sync()
+      await MenuItem.sync();
       await Table.sync()
       await Order.sync()
       await Order_Item.sync()
       await Reservation.sync()
       await Inventory.sync()
+      // await sequelize.sync();
 
      app.use(express.json());
 
