@@ -34,7 +34,16 @@ const MenuItem = sequelize.define("MenuItem", {
       allowNull: true,
    },
 
-
+ preparation_time: {
+      type: DataTypes.INTEGER,  // in minutes
+      allowNull: true,
+      defaultValue: 10,
+   },
+   is_available: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+   },
 }, 
 
 // Model options
