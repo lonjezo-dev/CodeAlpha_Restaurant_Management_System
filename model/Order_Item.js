@@ -15,11 +15,21 @@ const Order_Item = sequelize.define("Order_Item", {
     quantity: {
         type: DataTypes.INTEGER,    
         allowNull: false,
+        defaultValue: 1,
     },
+     special_instructions: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+   },
     price: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false,
     },
+     item_status: {
+      type: DataTypes.ENUM('pending', 'preparing', 'ready', 'served'),
+      allowNull: false,
+      defaultValue: 'pending',
+   }
 }, 
 // Model options
 {
