@@ -20,12 +20,29 @@ const Order = sequelize.define("Order", {
    total_amount: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
+      defaultValue: 0.00,
    },
    order_time: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
    },
+    customer_notes: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+   },
+   preparation_notes: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+   },
+   estimated_completion_time: {
+      type: DataTypes.DATE,
+      allowNull: true,
+   },
+   cancellation_reason: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+   }
 }, 
 // Model options
 {
