@@ -5,21 +5,20 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-// Use Render's DATABASE_URL if available, otherwise use your existing config
+// Parse DATABASE_URL into connection options
 const getConfig = () => {
   if (process.env.DATABASE_URL) {
-    // For Render production
+    // Parse the DATABASE_URL for Render
+    const url = new URL(process.env.DATABASE_URL);
     return {
-      connectionString: process.env.DATABASE_URL,
+      database: url.pathname.substring(1), // Remove leading slash
+      user: url.user,
+      password: url.password,
+      host: url.hostname,
+      port: parseInt(url.port),
       dialect: PostgresDialect,
-      ssl: true,
-      rejectUnauthorized: false
-      // dialectOptions: {
-      //   ssl: {
-      //     require: true,
-      //     rejectUnauthorized: false
-      //   }
-      // }
+        ssl: true,  
+        rejectUnauthorized: false, 
     };
   } else {
     // For local development - keep your exact words
@@ -30,7 +29,7 @@ const getConfig = () => {
       host: process.env.DB_HOST || "localhost",
       port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 5432,
       dialect: PostgresDialect,
-      ssl: false
+        ssl: false
     };
   }
 };
