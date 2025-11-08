@@ -12,12 +12,14 @@ const getConfig = () => {
     return {
       connectionString: process.env.DATABASE_URL,
       dialect: PostgresDialect,
-      dialectOptions: {
-        ssl: {
-          require: true,
-          rejectUnauthorized: false
-        }
-      }
+      ssl: true,
+      rejectUnauthorized: false
+      // dialectOptions: {
+      //   ssl: {
+      //     require: true,
+      //     rejectUnauthorized: false
+      //   }
+      // }
     };
   } else {
     // For local development - keep your exact words
