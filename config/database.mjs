@@ -5,23 +5,24 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-// Parse DATABASE_URL into connection options
 const getConfig = () => {
   if (process.env.DATABASE_URL) {
-    // Parse the DATABASE_URL for Render
     const url = new URL(process.env.DATABASE_URL);
+
     return {
-      database: url.pathname.substring(1), // Remove leading slash
-      user: url.user,
+      database: url.pathname.substring(1),
+      user: url.username, // corrected property (was url.user)
       password: url.password,
       host: url.hostname,
       port: parseInt(url.port),
       dialect: PostgresDialect,
-        ssl: true,  
-        rejectUnauthorized: false, 
+      ssl: {
+        require: true,
+        rejectUnauthorized: false, // ✅ put inside ssl object
+      },
     };
   } else {
-    // For local development - keep your exact words
+    // Local configuration
     return {
       database: process.env.DB_NAME || "restaurant_management_system_db",
       user: process.env.DB_USER || "sam",
@@ -29,7 +30,7 @@ const getConfig = () => {
       host: process.env.DB_HOST || "localhost",
       port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 5432,
       dialect: PostgresDialect,
-        ssl: false
+      ssl: false,
     };
   }
 };
@@ -37,5 +38,5 @@ const getConfig = () => {
 export const sequelize = new Sequelize({
   ...getConfig(),
   logging: false,
-  clientMinMessages: "notice"
+  clientMinMessages: "notice",
 });
