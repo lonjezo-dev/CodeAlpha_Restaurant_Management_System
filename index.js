@@ -3,6 +3,7 @@ import express  from "express";
 import { sequelize }  from "./config/database.mjs";
 import cors  from "cors"; 
 import apiRoutes from "./routes.mjs";
+import swaggerDocs from "./config/swagger.mjs";
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -40,6 +41,7 @@ app.get("/", (req, res) => {
     message: "🍽️ Restaurant Management System API",
     version: "1.0.0",
     health: "/health",
+    documentation: "/api-docs",
     docs: "/api/menu-items"
   });
 });
@@ -57,10 +59,14 @@ const initApp = async () => {
      // Mount API routes
      app.use('/api',apiRoutes );
 
+     // Initialize Swagger Documentation
+     swaggerDocs(app);
+
      app.listen(port, '0.0.0.0', () => {
         console.log(`🚀 Server listening on port ${port}`);
         console.log(`📍 Local: http://localhost:${port}`);
         console.log(`❤️  Health: http://localhost:${port}/health`);
+        console.log(`📖 Documentation: http://localhost:${port}/api-docs`);
         console.log(`📚 API: http://localhost:${port}/api`);
      });
    } catch (error) {
