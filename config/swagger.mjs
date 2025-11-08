@@ -17,7 +17,7 @@ const options = {
     servers: [
       {
         url: process.env.NODE_ENV === 'production' 
-          ? 'https://codealpha-restaurant-management-system-1.onrender.com//api' 
+          ? 'https://codealpha-restaurant-management-system-1.onrender.com/api' 
           : 'http://localhost:3001/api',
         description: process.env.NODE_ENV === 'production' ? 'Production server' : 'Development server'
       },
