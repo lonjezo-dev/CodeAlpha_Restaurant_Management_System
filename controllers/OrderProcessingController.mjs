@@ -3,6 +3,7 @@ import  { Order_Item }  from "../model/Order_Item.mjs";
 import { MenuItem } from "../model/MenuItem.mjs";
 import { Table }  from "../model/Table.mjs";
 import { Op } from '@sequelize/core';
+import { sequelize } from "../config/database.mjs";
 
 export class OrderProcessingController {
     
