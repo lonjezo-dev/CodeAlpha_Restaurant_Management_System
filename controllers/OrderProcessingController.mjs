@@ -1,11 +1,10 @@
-const { Order } = require("../model/Order");
-const { Order_Item } = require("../model/Order_Item");
-const { MenuItem } = require("../model/MenuItem");
-const { Table } = require("../model/Table");
-const { sequelize } = require("../model/Order");
-const { Op } = require("sequelize");
+import { Order } from "../model/Order.mjs";
+import  { Order_Item }  from "../model/Order_Item.mjs";
+import { MenuItem } from "../model/MenuItem.mjs";
+import { Table }  from "../model/Table.mjs";
+import { Op } from '@sequelize/core';
 
-class OrderProcessingController {
+export class OrderProcessingController {
     
     // ✅ Create complete order with items
     static async createCompleteOrder(req, res) {
@@ -738,4 +737,4 @@ class OrderProcessingController {
     }
 }
 
-module.exports = OrderProcessingController;
+// module.exports = OrderProcessingController;

@@ -1,7 +1,7 @@
-const { Reservation } = require("../model/Reservation");
+import { Reservation }  from "../model/Reservation.mjs";
 
 // Create a new reservation
-const createReservation =  (req, res) => {
+export const createReservation =  (req, res) => {
     const { customer_name, customer_phone, reservation_time, number_of_guests, table_id } = req.body;
 
     Reservation.create({
@@ -20,7 +20,7 @@ const createReservation =  (req, res) => {
 }                           
 
 // Get all reservations
-const getAllReservations = (req, res) => {
+export const getAllReservations = (req, res) => {
     Reservation.findAll(
         {attributes: ['customer_name', 'customer_phone', 'reservation_time', 'number_of_guests', 'status']}
     )
@@ -33,7 +33,7 @@ const getAllReservations = (req, res) => {
 };
 
 // Get a specific reservation by ID
-const getReservationById = (req, res) => {
+export const getReservationById = (req, res) => {
     const  id = req.params.id;
 
     Reservation.findByPk(id, {
@@ -48,7 +48,7 @@ const getReservationById = (req, res) => {
 };
 
 // Update a reservation by ID
-const updateReservation = (req, res) => {
+export const updateReservation = (req, res) => {
     const id = req.params.id;
     const { customer_name, customer_phone, reservation_time, number_of_guests, status, table_id } = req.body;
 
@@ -65,7 +65,7 @@ const updateReservation = (req, res) => {
 };
 
 // Delete a specific reservation by ID
-const deleteReservation = (req, res) => {
+export const deleteReservation = (req, res) => {
     const id = req.params.id;
 
     Reservation.destroy({ where: { id } })
@@ -77,10 +77,4 @@ const deleteReservation = (req, res) => {
     });
 };
 
-module.exports = {
-    createReservation,
-    getAllReservations,
-    getReservationById,
-    updateReservation,
-    deleteReservation
-};
+

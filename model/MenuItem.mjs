@@ -1,8 +1,8 @@
-const sequelize = require("../config/database");
-const { DataTypes } = require("sequelize");
+import {sequelize} from "../config/database.mjs";
+import { DataTypes } from '@sequelize/core';
 
 // Define the MenuItem model
-const MenuItem = sequelize.define("MenuItem", {
+export const MenuItem = sequelize.define("MenuItem", {
    // Each attribute will pair with a column
       // Here we define our model attributes
 
@@ -54,12 +54,3 @@ const MenuItem = sequelize.define("MenuItem", {
    timestamps: true,
 });
 
-
-// `sequelize.define` also returns the model
-// console.log(MenuItem === sequelize.models.MenuItem); // true
-
-// Export the MenuItem model
-module.exports =  {
-    MenuItem,
-    sequelize
-};

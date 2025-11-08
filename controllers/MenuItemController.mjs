@@ -1,7 +1,7 @@
-// const { where } = require("sequelize");
-const { MenuItem } = require("../model/MenuItem");
+// const { where } = require("sequelize")
+import { MenuItem } from "../model/MenuItem.mjs";
 
-const createMenuItem = (req, res) => {
+export const createMenuItem = (req, res) => {
      // Call the create function on the Menu Item model, and pass the data that you receive.
      const { name, description, price, category } = req.body;
 
@@ -16,7 +16,7 @@ const createMenuItem = (req, res) => {
          });
 };
 
-const getAllMenuItems = (req, res) => {
+export const getAllMenuItems = (req, res) => {
     MenuItem.findAll(
         {
       attributes: ['name', 'description', 'price', 'category'],
@@ -32,7 +32,7 @@ const getAllMenuItems = (req, res) => {
       });
 };
 
-const getMenuItem = (req, res) => {
+export const getMenuItem = (req, res) => {
     const id = req.params.id;
     // console.log(id);
     MenuItem.findByPk(id,{
@@ -46,7 +46,7 @@ const getMenuItem = (req, res) => {
         });
 };
 
-const updateMenuItem = (req, res) => {
+export const updateMenuItem = (req, res) => {
 MenuItem.update(
     {
         name: req.body.name,
@@ -66,7 +66,7 @@ MenuItem.update(
     });
 }
 
-const deleteMenuItem = (req, res) => {
+export const deleteMenuItem = (req, res) => {
    MenuItem.destroy({
        where: {
            id: req.params.id,
@@ -80,7 +80,7 @@ const deleteMenuItem = (req, res) => {
        });
 };
 
-const deleteAllMenuItems = (req, res) => {
+export const deleteAllMenuItems = (req, res) => {
     MenuItem.destroy({
         truncate: true,
     }).then(() => { 
@@ -90,4 +90,4 @@ const deleteAllMenuItems = (req, res) => {
         res.status(500).json({ error: "Failed to delete all menu items" });
     });
 }
-module.exports = { createMenuItem, getAllMenuItems,getMenuItem, updateMenuItem, deleteMenuItem, deleteAllMenuItems };
+// module.exports = { createMenuItem, getAllMenuItems,getMenuItem, updateMenuItem, deleteMenuItem, deleteAllMenuItems };

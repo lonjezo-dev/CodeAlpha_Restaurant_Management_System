@@ -1,8 +1,8 @@
-const e = require("express");
-const {Table} = require("../model/Table");
+// const e = require("express");
+import {Table}  from "../model/Table.mjs";
 
 // create Table controller function accessed by restaurant staff
-const createTable = (req, res) =>{
+export const createTable = (req, res) =>{
     // get data from request body
     const { table_number, capacity, status } = req.body;
     Table.create({table_number, capacity, status})
@@ -14,7 +14,7 @@ const createTable = (req, res) =>{
     });
 }
 
-const getTable = (req, res) =>{
+export const getTable = (req, res) =>{
     // get table id from request params
     const id = req.params.id;
     Table.findByPk(id,{
@@ -28,7 +28,7 @@ const getTable = (req, res) =>{
     });
 }
 
-const getAllTables = (req, res) =>{
+export const getAllTables = (req, res) =>{
     // fetch all tables from the database
     Table.findAll({
         attributes:['table_number', 'capacity', 'status']
@@ -40,7 +40,7 @@ const getAllTables = (req, res) =>{
     })
 }
 
-const updateTable = (req, res) =>{
+export const updateTable = (req, res) =>{
     Table.update(
         {
             table_number: req.body.table_number,
@@ -59,7 +59,7 @@ const updateTable = (req, res) =>{
         });
 }
 
-const deleteTable = (req, res) =>{
+export const deleteTable = (req, res) =>{
     Table.destroy({
         where: {
             id: req.params.id,
@@ -73,4 +73,4 @@ const deleteTable = (req, res) =>{
     });
 }
 
-module.exports = { createTable,getTable, getAllTables,updateTable, deleteTable}
+// module.exports = { createTable,getTable, getAllTables,updateTable, deleteTable}

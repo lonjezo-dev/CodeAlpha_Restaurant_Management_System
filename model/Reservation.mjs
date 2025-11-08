@@ -1,8 +1,8 @@
-const sequelize = require("../config/database");
-const {Table } = require("./Table");
-const { DataTypes} = require("sequelize");
+import {Table }  from "./Table.mjs";
+import {sequelize} from "../config/database.mjs";
+import { DataTypes } from '@sequelize/core';
 
-const Reservation = sequelize.define("Reservation", {
+export const Reservation = sequelize.define("Reservation", {
    // Each attribute will pair with a column
       // Here we define our model attributes
 
@@ -43,11 +43,8 @@ const Reservation = sequelize.define("Reservation", {
 });     
 
 // 2️⃣ Define the relationship AFTER both models exist
-Table.hasMany(Reservation, { foreignKey: "table_id", onDelete: "CASCADE" });
-Reservation.belongsTo(Table, { foreignKey: "table_id" });
+Table.hasMany(Reservation,{foreignKey:  { name:"table_id", onDelete: "CASCADE",onUpdate :"CASCADE" }});
+Reservation.belongsTo(Table, {foreignKey: { name:"table_id", onDelete: "CASCADE",onUpdate :"CASCADE" }});
 
-module.exports = {
-    Reservation,
-    sequelize
-};
+
     

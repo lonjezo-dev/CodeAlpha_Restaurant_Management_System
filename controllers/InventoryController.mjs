@@ -1,7 +1,7 @@
-const { Inventory } = require("../model/Inventory");
+import  { Inventory } from "../model/Inventory.mjs";
 
 // Create a new inventory item
-const createInventoryItem = (req, res) => {
+export const createInventoryItem = (req, res) => {
     const { item_name, quantity, unit } = req.body;
 
     Inventory.create({
@@ -18,7 +18,7 @@ const createInventoryItem = (req, res) => {
 };
 
 // Get all inventory items
-const getAllInventoryItems = (req, res) => {
+export const getAllInventoryItems = (req, res) => {
     Inventory.findAll()
     .then(inventoryItems => {
         res.status(200).json(inventoryItems);
@@ -29,7 +29,7 @@ const getAllInventoryItems = (req, res) => {
 };
 
 // Get a specific inventory item by ID
-const getInventoryItemById = (req, res) => {
+export const getInventoryItemById = (req, res) => {
     const id = req.params.id;
 
     Inventory.findByPk(id)
@@ -41,7 +41,7 @@ const getInventoryItemById = (req, res) => {
     });
 };      
 // Update an inventory item by ID
-const updateInventoryItem = (req, res) => {
+export const updateInventoryItem = (req, res) => {
     const id = req.params.id;
     const { item_name, quantity, unit } = req.body;
 
@@ -58,7 +58,7 @@ const updateInventoryItem = (req, res) => {
 };
 
 // Delete a specific inventory item by ID
-const deleteInventoryItem = (req, res) => {
+export const deleteInventoryItem = (req, res) => {
     const id = req.params.id;
 
     Inventory.destroy({ where: { id } })
@@ -70,10 +70,3 @@ const deleteInventoryItem = (req, res) => {
     });
 };
 
-module.exports = {
-    createInventoryItem,
-    getAllInventoryItems,
-    getInventoryItemById,
-    updateInventoryItem,
-    deleteInventoryItem
-};

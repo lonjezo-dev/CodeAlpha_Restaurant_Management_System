@@ -1,8 +1,8 @@
-const { Order_Item } = require("../model/Order_Item");
+import { Order_Item }  from "../model/Order_Item.mjs";
 
 
 // Create a new order item
-const createOrderItem = (req, res) => {
+export const createOrderItem = (req, res) => {
     const { quantity, price, order_id, menu_item_id } = req.body;
 
     Order_Item.create({
@@ -21,7 +21,7 @@ const createOrderItem = (req, res) => {
 
 
 // Get all order items
-const getAllOrderItems = (req, res) => {
+export  const getAllOrderItems = (req, res) => {
     Order_Item.findAll({
         attributes: ['quantity', 'price', 'order_id', 'menu_item_id']
     })
@@ -34,7 +34,7 @@ const getAllOrderItems = (req, res) => {
 }
 
 // Get a specific order item by ID
-const getOrderItemById = (req, res) => {
+export  const getOrderItemById = (req, res) => {
     const id = req.params.id;
     Order_Item.findByPk(id, {
         attributes: ['quantity', 'price', 'order_id', 'menu_item_id']
@@ -48,7 +48,7 @@ const getOrderItemById = (req, res) => {
 }
 
 // Update an order item by ID
-const updateOrderItem = (req, res) => {
+export  const updateOrderItem = (req, res) => {
     Order_Item.update(
         {
             quantity: req.body.quantity,
@@ -69,7 +69,7 @@ const updateOrderItem = (req, res) => {
 }
 
 // Delete an order item by ID
-const deleteOrderItem = (req, res) => {
+export  const deleteOrderItem = (req, res) => {
     const id = req.params.id;
     Order_Item.destroy({
         where: { id: id }
@@ -81,11 +81,3 @@ const deleteOrderItem = (req, res) => {
         res.status(500).json({ error: 'Failed to delete order item', error });
     });
 }
-
-module.exports = {
-    createOrderItem,
-    getAllOrderItems,
-    getOrderItemById,
-    updateOrderItem,
-    deleteOrderItem
-};

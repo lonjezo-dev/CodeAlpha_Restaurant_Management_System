@@ -1,7 +1,7 @@
-const sequelize = require("../config/database");
-const { DataTypes } = require("sequelize");
+import {sequelize} from "../config/database.mjs";
+import { DataTypes } from '@sequelize/core';
 
-const Inventory = sequelize.define("Inventory", {
+ export const Inventory = sequelize.define("Inventory", {
    // Each attribute will pair with a column
       // Here we define our model attributes
 
@@ -35,10 +35,7 @@ const Inventory = sequelize.define("Inventory", {
    tableName: "inventory",
 });
 
-module.exports = {
-    Inventory,
-    sequelize
-};
+
 
 
 

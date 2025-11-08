@@ -1,9 +1,11 @@
-// const { FOREIGNKEYS } = require("sequelize/lib/query-types");
-const sequelize = require("../config/database");
-const { DataTypes } = require("sequelize");
-const { Table } = require("./Table");
 
-const Order = sequelize.define("Order", {
+import { DataTypes }  from '@sequelize/core';
+import { Table }  from "./Table.mjs";
+import { sequelize } from "../config/database.mjs";
+
+
+
+export const Order = sequelize.define("Order", {
    // Each attribute will pair with a column
       // Here we define our model attributes
 
@@ -53,11 +55,21 @@ const Order = sequelize.define("Order", {
 }); 
 
 
-// 2️⃣ Define the relationship AFTER both models exist
-Table.hasMany(Order, { foreignKey: "table_id", onDelete: "CASCADE" });
-Order.belongsTo(Table, { foreignKey: "table_id" });
+// // 2️⃣ Define the relationship AFTER both models exist
+Table.hasMany(Order, { 
+  foreignKey: { 
+    name: "table_id", 
+    onDelete: "CASCADE", 
+    onUpdate: "CASCADE" 
+  } 
+});
 
-module.exports = {
-    Order,
-    sequelize
-};
+Order.belongsTo(Table, { 
+  foreignKey: { 
+    name: "table_id", 
+    onDelete: "CASCADE", 
+    onUpdate: "CASCADE" 
+  } 
+});
+
+

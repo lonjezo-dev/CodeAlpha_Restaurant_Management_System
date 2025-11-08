@@ -1,13 +1,8 @@
 // index.js
-const express = require("express");
-const sequelize = require("./config/database");
-const { MenuItem } = require("./model/MenuItem");
-const { Table } = require("./model/Table");
-const { Order } = require("./model/Order");
-const { Order_Item } = require("./model/Order_Item");
-const { Reservation } = require("./model/Reservation");
-const { Inventory } = require("./model/Inventory");
-const cors = require("cors"); 
+import express  from "express";
+import { sequelize }  from "./config/database.mjs";
+import cors  from "cors"; 
+import apiRoutes from "./routes.mjs";
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -55,17 +50,12 @@ const initApp = async () => {
       console.log("✅ Database connection established successfully.");
 
       // Sync all models
-      await MenuItem.sync();
-      await Table.sync();
-      await Order.sync();
-      await Order_Item.sync();
-      await Reservation.sync();
-      await Inventory.sync();
-      
+      await sequelize.sync();
+
       console.log("✅ All models synchronized successfully.");
 
      // Mount API routes
-     app.use('/api', require('./routes'));
+     app.use('/api',apiRoutes );
 
      app.listen(port, '0.0.0.0', () => {
         console.log(`🚀 Server listening on port ${port}`);
