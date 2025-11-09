@@ -1,4 +1,3 @@
-// routes.mjs
 import { createMenuItem, getAllMenuItems, getMenuItem, updateMenuItem, deleteMenuItem, deleteAllMenuItems } from "./controllers/MenuItemController.mjs";
 import express from "express";
 import { createTable, getAllTables, getTable, updateTable, deleteTable } from "./controllers/TableController.mjs";
@@ -561,9 +560,9 @@ router.patch("/orders/:id/status", OrderProcessingController.updateOrderStatus);
 
 /**
  * @swagger
- * /orders/{id}:
- *   delete:
- *     summary: Cancel an order
+ * /orders/{id}/cancel:
+ *   patch:
+ *     summary: Cancel an order with required reason
  *     tags: [Orders]
  *     parameters:
  *       - in: path
@@ -572,13 +571,41 @@ router.patch("/orders/:id/status", OrderProcessingController.updateOrderStatus);
  *         schema:
  *           type: integer
  *         description: Order ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - cancellation_reason
+ *             properties:
+ *               cancellation_reason:
+ *                 type: string
+ *                 description: Reason for cancellation (required)
+ *                 example: "Customer changed mind"
  *     responses:
  *       200:
  *         description: Order cancelled successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 order:
+ *                   $ref: '#/components/schemas/Order'
+ *       400:
+ *         description: Invalid input or cannot cancel completed order
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       404:
  *         description: Order not found
  */
-router.delete("/orders/:id", OrderProcessingController.cancelOrder);
+router.patch("/orders/:id/cancel", OrderProcessingController.cancelOrder);
 
 /**
  * @swagger

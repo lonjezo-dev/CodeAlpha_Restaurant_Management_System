@@ -250,12 +250,19 @@ export class OrderProcessingController {
         }
     }
     
-    // ✅ Enhanced cancel order
+    // ✅ Enhanced cancel order with required cancellation reason (PATCH version)
     static async cancelOrder(req, res) {
         const { id } = req.params;
         const { cancellation_reason } = req.body;
         
         try {
+            // Validate cancellation_reason is provided
+            if (!cancellation_reason || cancellation_reason.trim() === '') {
+                return res.status(400).json({ 
+                    error: 'Cancellation reason is required' 
+                });
+            }
+
             const order = await Order.findByPk(id);
             if (!order) {
                 return res.status(404).json({ error: 'Order not found' });
@@ -268,10 +275,10 @@ export class OrderProcessingController {
             }
             
             await sequelize.transaction(async (t) => {
-                // Update order status
+                // Update order status with required cancellation reason
                 await order.update({ 
                     order_status: 'cancelled',
-                    cancellation_reason: cancellation_reason
+                    cancellation_reason: cancellation_reason.trim()
                 }, { transaction: t });
                 
                 // Free up the table
@@ -737,5 +744,3 @@ export class OrderProcessingController {
         }
     }
 }
-
-// module.exports = OrderProcessingController;
