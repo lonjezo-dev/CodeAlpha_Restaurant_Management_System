@@ -18,7 +18,7 @@ export const getTable = (req, res) =>{
     // get table id from request params
     const id = req.params.id;
     Table.findByPk(id,{
-        attributes: ['table_number', 'capacity', 'status'],
+        attributes: ['id','table_number', 'capacity', 'status'],
     })
     .then((table) => {
         res.json(table);
@@ -31,7 +31,7 @@ export const getTable = (req, res) =>{
 export const getAllTables = (req, res) =>{
     // fetch all tables from the database
     Table.findAll({
-        attributes:['table_number', 'capacity', 'status']
+        attributes:['id','table_number', 'capacity', 'status']
     }).then((result)=>{
         return res.json(result);
     }).catch((error)=>{
@@ -73,4 +73,3 @@ export const deleteTable = (req, res) =>{
     });
 }
 
-// module.exports = { createTable,getTable, getAllTables,updateTable, deleteTable}

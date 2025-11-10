@@ -19,7 +19,9 @@ export const createInventoryItem = (req, res) => {
 
 // Get all inventory items
 export const getAllInventoryItems = (req, res) => {
-    Inventory.findAll()
+    Inventory.findAll({ 
+       attributes:['id','item_name','quantity','unity','last_updated']
+    })
     .then(inventoryItems => {
         res.status(200).json(inventoryItems);
     })

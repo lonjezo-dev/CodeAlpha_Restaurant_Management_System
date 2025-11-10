@@ -22,7 +22,7 @@ export const createReservation =  (req, res) => {
 // Get all reservations
 export const getAllReservations = (req, res) => {
     Reservation.findAll(
-        {attributes: ['customer_name', 'customer_phone', 'reservation_time', 'number_of_guests', 'status']}
+        {attributes: ['id','customer_name', 'customer_phone', 'reservation_time', 'number_of_guests', 'status']}
     )
     .then(reservations => {
         res.status(200).json(reservations);
@@ -37,7 +37,7 @@ export const getReservationById = (req, res) => {
     const  id = req.params.id;
 
     Reservation.findByPk(id, {
-        attributes: ['customer_name', 'customer_phone', 'reservation_time', 'number_of_guests', 'status']
+        attributes: ['id','customer_name', 'customer_phone', 'reservation_time', 'number_of_guests', 'status']
     })
     .then(reservation => {
             res.status(200).json(reservation);

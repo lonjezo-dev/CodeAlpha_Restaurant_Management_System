@@ -23,7 +23,7 @@ export const createOrderItem = (req, res) => {
 // Get all order items
 export  const getAllOrderItems = (req, res) => {
     Order_Item.findAll({
-        attributes: ['quantity', 'price', 'order_id', 'menu_item_id']
+        attributes: ['id','quantity', 'price', 'order_id', 'menu_item_id']
     })
     .then((orderItems) => {
         res.json(orderItems);               
@@ -37,7 +37,7 @@ export  const getAllOrderItems = (req, res) => {
 export  const getOrderItemById = (req, res) => {
     const id = req.params.id;
     Order_Item.findByPk(id, {
-        attributes: ['quantity', 'price', 'order_id', 'menu_item_id']
+        attributes: ['id','quantity', 'price', 'order_id', 'menu_item_id']
     })
     .then((orderItem) => {
         res.json(orderItem);

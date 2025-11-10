@@ -19,7 +19,7 @@ export const createMenuItem = (req, res) => {
 export const getAllMenuItems = (req, res) => {
     MenuItem.findAll(
         {
-      attributes: ['name', 'description', 'price', 'category'],
+      attributes: ['id','name', 'description', 'price', 'category'],
         // where: {}
    }).then((result) => {
          return res.json(result);
@@ -36,7 +36,7 @@ export const getMenuItem = (req, res) => {
     const id = req.params.id;
     // console.log(id);
     MenuItem.findByPk(id,{
-         attributes: ['name', 'description', 'price', 'category'],
+         attributes: ['id','name', 'description', 'price', 'category'],
     })
         .then((menuItem) => {
                 res.json(menuItem);
@@ -90,4 +90,3 @@ export const deleteAllMenuItems = (req, res) => {
         res.status(500).json({ error: "Failed to delete all menu items" });
     });
 }
-// module.exports = { createMenuItem, getAllMenuItems,getMenuItem, updateMenuItem, deleteMenuItem, deleteAllMenuItems };
