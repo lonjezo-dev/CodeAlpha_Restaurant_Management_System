@@ -5,6 +5,8 @@ import { OrderProcessingController } from "./controllers/OrderProcessingControll
 import { createOrderItem, getAllOrderItems, getOrderItemById, updateOrderItem, deleteOrderItem } from "./controllers/OrderItemController.mjs";
 import { createReservation, getAllReservations, getReservationById, updateReservation, deleteReservation } from "./controllers/ReservationController.mjs";
 import { createInventoryItem, getAllInventoryItems, getInventoryItemById, updateInventoryItem, deleteInventoryItem } from "./controllers/InventoryController.mjs";
+import  TableAvailabilityController from './controllers/TableAvailabilityController.mjs';
+
 const router = express.Router();
 
 /**
@@ -115,6 +117,23 @@ const router = express.Router();
  *           type: integer
  *         unit:
  *           type: string
+ * 
+ *     TableAvailabilitySearch:
+ *       type: object
+ *       required:
+ *         - party_size
+ *         - reservation_time
+ *       properties:
+ *         party_size:
+ *           type: integer
+ *           description: Number of guests
+ *         reservation_time:
+ *           type: string
+ *           format: date-time
+ *           description: Desired reservation time
+ *         duration_minutes:
+ *           type: integer
+ *           description: Expected dining duration (default 90 minutes)
  * 
  *     Error:
  *       type: object
@@ -370,6 +389,212 @@ router.put("/table/:id", updateTable);
  *         description: Table not found
  */
 router.delete("/table/:id", deleteTable);
+
+// ====================================
+// TABLE AVAILABILITY ROUTES
+// ====================================
+
+/**
+ * @swagger
+ * /tables/status:
+ *   get:
+ *     summary: Get status of all tables
+ *     tags: [Table Availability]
+ *     responses:
+ *       200:
+ *         description: All tables status retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 tables:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       table_number:
+ *                         type: integer
+ *                       capacity:
+ *                         type: integer
+ *                       status:
+ *                         type: string
+ *                       current_order_id:
+ *                         type: integer
+ *                         nullable: true
+ *                       reserved_until:
+ *                         type: string
+ *                         format: date-time
+ *                         nullable: true
+ */
+router.get("/tables/status", TableAvailabilityController.getAllTablesStatus);
+
+/**
+ * @swagger
+ * /tables/availability/{tableId}:
+ *   get:
+ *     summary: Check table availability for a specific time
+ *     tags: [Table Availability]
+ *     parameters:
+ *       - in: path
+ *         name: tableId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Table ID
+ *       - in: query
+ *         name: datetime
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: Date and time to check availability for
+ *       - in: query
+ *         name: duration
+ *         schema:
+ *           type: integer
+ *           default: 90
+ *         description: Duration in minutes (default 90)
+ *     responses:
+ *       200:
+ *         description: Table availability checked successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 available:
+ *                   type: boolean
+ *                 table_id:
+ *                   type: integer
+ *                 requested_time:
+ *                   type: string
+ *                   format: date-time
+ *                 conflicting_reservations:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ */
+router.get("/tables/availability/:tableId", TableAvailabilityController.checkTableAvailability);
+
+/**
+ * @swagger
+ * /tables/availability/{tableId}/immediate:
+ *   get:
+ *     summary: Check immediate table availability (right now)
+ *     tags: [Table Availability]
+ *     parameters:
+ *       - in: path
+ *         name: tableId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Table ID
+ *     responses:
+ *       200:
+ *         description: Immediate availability checked successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 available:
+ *                   type: boolean
+ *                 table_id:
+ *                   type: integer
+ *                 current_status:
+ *                   type: string
+ *                 estimated_available_time:
+ *                   type: string
+ *                   format: date-time
+ *                   nullable: true
+ */
+router.get("/tables/availability/:tableId/immediate", TableAvailabilityController.checkImmediateAvailability);
+
+/**
+ * @swagger
+ * /tables/availability/search:
+ *   post:
+ *     summary: Find available tables for a given time and party size
+ *     tags: [Table Availability]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/TableAvailabilitySearch'
+ *     responses:
+ *       200:
+ *         description: Available tables found successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 available_tables:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       table_number:
+ *                         type: integer
+ *                       capacity:
+ *                         type: integer
+ *                 search_criteria:
+ *                   type: object
+ *                   properties:
+ *                     party_size:
+ *                       type: integer
+ *                     reservation_time:
+ *                       type: string
+ *                       format: date-time
+ *                     duration_minutes:
+ *                       type: integer
+ */
+router.post("/tables/availability/search", TableAvailabilityController.findAvailableTables);
+
+/**
+ * @swagger
+ * /tables/{tableId}/status:
+ *   get:
+ *     summary: Get detailed status of a specific table
+ *     tags: [Table Availability]
+ *     parameters:
+ *       - in: path
+ *         name: tableId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Table ID
+ *     responses:
+ *       200:
+ *         description: Table status retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 table_number:
+ *                   type: integer
+ *                 capacity:
+ *                   type: integer
+ *                 status:
+ *                   type: string
+ *                 current_order:
+ *                   type: object
+ *                   nullable: true
+ *                 upcoming_reservations:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ */
+router.get("/tables/:tableId/status", TableAvailabilityController.getTableStatus);
 
 // ====================================
 // ORDERS ROUTES

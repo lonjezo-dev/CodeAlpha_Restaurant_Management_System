@@ -54,6 +54,7 @@ const initApp = async () => {
       // Sync all models
       await sequelize.sync();
 
+
       console.log("✅ All models synchronized successfully.");
 
      // Mount API routes

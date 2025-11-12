@@ -24,7 +24,7 @@ export const Table = sequelize.define("Table", {
     },
     // This will create a status for a column of the table
     status: {
-      type: DataTypes.ENUM('available', 'occupied', 'reserved'),    
+      type: DataTypes.ENUM('available', 'occupied', 'reserved','cleaning'),    
         allowNull: false,
         defaultValue: 'available',
 

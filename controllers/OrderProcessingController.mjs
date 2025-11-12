@@ -4,10 +4,11 @@ import { MenuItem } from "../model/MenuItem.mjs";
 import { Table }  from "../model/Table.mjs";
 import { Op } from '@sequelize/core';
 import { sequelize } from "../config/database.mjs";
+import TableAvailabilityService from "../services/TableAvailabilityService.mjs";
 
 export class OrderProcessingController {
     
-    // ✅ Create complete order with items
+    // ✅ Create complete order with items (INTEGRATED)
     static async createCompleteOrder(req, res) {
         const { table_id, order_items, customer_notes } = req.body;
         
@@ -19,13 +20,13 @@ export class OrderProcessingController {
                 });
             }
 
-            // Check if table exists and is available
-            const table = await Table.findByPk(table_id);
-            if (!table) {
-                return res.status(404).json({ error: 'Table not found' });
-            }
-            if (table.status === 'occupied') {
-                return res.status(400).json({ error: 'Table is already occupied' });
+            // Use TableAvailabilityService for comprehensive check
+            const availability = await TableAvailabilityService.canAcceptImmediateOrder(table_id);
+            
+            if (!availability.available) {
+                return res.status(400).json({ 
+                    error: `Cannot place order: ${availability.reason}` 
+                });
             }
 
             const result = await sequelize.transaction(async (t) => {
@@ -75,11 +76,8 @@ export class OrderProcessingController {
                 
                 await Order_Item.bulkCreate(orderItemsData, { transaction: t });
                 
-                // 4. Update table status to occupied
-                await Table.update(
-                    { status: 'occupied' },
-                    { where: { id: table_id }, transaction: t }
-                );
+                // 4. Update table status using service
+                await TableAvailabilityService.updateTableStatus(table_id, 'occupied');
                 
                 return { order, order_items: orderItemsData };
             });
@@ -94,6 +92,106 @@ export class OrderProcessingController {
             console.error('Order creation error:', error);
             res.status(500).json({ 
                 error: 'Failed to create order', 
+                details: error.message 
+            });
+        }
+    }
+    
+    // ✅ Enhanced cancel order (INTEGRATED)
+    static async cancelOrder(req, res) {
+        const { id } = req.params;
+        const { cancellation_reason } = req.body;
+        
+        try {
+            // Validate cancellation_reason is provided
+            if (!cancellation_reason || cancellation_reason.trim() === '') {
+                return res.status(400).json({ 
+                    error: 'Cancellation reason is required' 
+                });
+            }
+
+            const order = await Order.findByPk(id);
+            if (!order) {
+                return res.status(404).json({ error: 'Order not found' });
+            }
+            
+            if (order.order_status === 'completed') {
+                return res.status(400).json({ 
+                    error: 'Cannot cancel completed orders' 
+                });
+            }
+            
+            await sequelize.transaction(async (t) => {
+                // Update order status with required cancellation reason
+                await order.update({ 
+                    order_status: 'cancelled',
+                    cancellation_reason: cancellation_reason.trim()
+                }, { transaction: t });
+                
+                // Free up the table using service
+                await TableAvailabilityService.updateTableStatus(order.table_id, 'available');
+            });
+            
+            res.json({ 
+                message: 'Order cancelled successfully', 
+                order 
+            });
+            
+        } catch (error) {
+            console.error('Cancel order error:', error);
+            res.status(500).json({ 
+                error: 'Failed to cancel order', 
+                details: error.message 
+            });
+        }
+    }
+    
+    // ✅ Order status update with validation (INTEGRATED)
+    static async updateOrderStatus(req, res) {
+        const { id } = req.params;
+        const { status } = req.body;
+        
+        const validStatuses = ['pending', 'in_progress', 'completed', 'cancelled'];
+        const validTransitions = {
+            'pending': ['in_progress', 'cancelled'],
+            'in_progress': ['completed', 'cancelled'],
+            'completed': [],
+            'cancelled': []
+        };
+        
+        try {
+            if (!validStatuses.includes(status)) {
+                return res.status(400).json({ error: 'Invalid order status' });
+            }
+            
+            const order = await Order.findByPk(id);
+            if (!order) {
+                return res.status(404).json({ error: 'Order not found' });
+            }
+            
+            // Validate status transition
+            if (!validTransitions[order.order_status].includes(status)) {
+                return res.status(400).json({ 
+                    error: `Invalid status transition from ${order.order_status} to ${status}` 
+                });
+            }
+            
+            await order.update({ order_status: status });
+            
+            // If order is completed or cancelled, free up the table using service
+            if (status === 'completed' || status === 'cancelled') {
+                await TableAvailabilityService.updateTableStatus(order.table_id, 'available');
+            }
+            
+            res.json({ 
+                message: 'Order status updated successfully', 
+                order 
+            });
+            
+        } catch (error) {
+            console.error('Update order status error:', error);
+            res.status(500).json({ 
+                error: 'Failed to update order status', 
                 details: error.message 
             });
         }
@@ -194,7 +292,9 @@ export class OrderProcessingController {
         }
     }
     
-    // ✅ Enhanced update order
+
+  
+       // ✅ Enhanced update order
     static async updateOrder(req, res) {
         const { id } = req.params;
         const { table_id, customer_notes, preparation_notes } = req.body;
@@ -249,112 +349,9 @@ export class OrderProcessingController {
             });
         }
     }
+   
     
-    // ✅ Enhanced cancel order with required cancellation reason (PATCH version)
-    static async cancelOrder(req, res) {
-        const { id } = req.params;
-        const { cancellation_reason } = req.body;
-        
-        try {
-            // Validate cancellation_reason is provided
-            if (!cancellation_reason || cancellation_reason.trim() === '') {
-                return res.status(400).json({ 
-                    error: 'Cancellation reason is required' 
-                });
-            }
-
-            const order = await Order.findByPk(id);
-            if (!order) {
-                return res.status(404).json({ error: 'Order not found' });
-            }
-            
-            if (order.order_status === 'completed') {
-                return res.status(400).json({ 
-                    error: 'Cannot cancel completed orders' 
-                });
-            }
-            
-            await sequelize.transaction(async (t) => {
-                // Update order status with required cancellation reason
-                await order.update({ 
-                    order_status: 'cancelled',
-                    cancellation_reason: cancellation_reason.trim()
-                }, { transaction: t });
-                
-                // Free up the table
-                await Table.update(
-                    { status: 'available' },
-                    { where: { id: order.table_id }, transaction: t }
-                );
-            });
-            
-            res.json({ 
-                message: 'Order cancelled successfully', 
-                order 
-            });
-            
-        } catch (error) {
-            console.error('Cancel order error:', error);
-            res.status(500).json({ 
-                error: 'Failed to cancel order', 
-                details: error.message 
-            });
-        }
-    }
-    
-    // ✅ Order status update with validation
-    static async updateOrderStatus(req, res) {
-        const { id } = req.params;
-        const { status } = req.body;
-        
-        const validStatuses = ['pending', 'in_progress', 'completed', 'cancelled'];
-        const validTransitions = {
-            'pending': ['in_progress', 'cancelled'],
-            'in_progress': ['completed', 'cancelled'],
-            'completed': [],
-            'cancelled': []
-        };
-        
-        try {
-            if (!validStatuses.includes(status)) {
-                return res.status(400).json({ error: 'Invalid order status' });
-            }
-            
-            const order = await Order.findByPk(id);
-            if (!order) {
-                return res.status(404).json({ error: 'Order not found' });
-            }
-            
-            // Validate status transition
-            if (!validTransitions[order.order_status].includes(status)) {
-                return res.status(400).json({ 
-                    error: `Invalid status transition from ${order.order_status} to ${status}` 
-                });
-            }
-            
-            await order.update({ order_status: status });
-            
-            // If order is completed or cancelled, free up the table
-            if (status === 'completed' || status === 'cancelled') {
-                await Table.update(
-                    { status: 'available' },
-                    { where: { id: order.table_id } }
-                );
-            }
-            
-            res.json({ 
-                message: 'Order status updated successfully', 
-                order 
-            });
-            
-        } catch (error) {
-            console.error('Update order status error:', error);
-            res.status(500).json({ 
-                error: 'Failed to update order status', 
-                details: error.message 
-            });
-        }
-    }
+   
     
     // ✅ Add items to existing order
     static async addItemsToOrder(req, res) {
