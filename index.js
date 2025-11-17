@@ -54,7 +54,7 @@ const initApp = async () => {
 
       // Sync all models
       await sequelize.sync();
-      await Recipe.sync();
+    
 
 
       console.log("✅ All models synchronized successfully.");
