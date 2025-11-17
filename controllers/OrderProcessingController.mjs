@@ -1,14 +1,16 @@
+// controllers/OrderProcessingController.mjs
 import { Order } from "../model/Order.mjs";
-import  { Order_Item }  from "../model/Order_Item.mjs";
+import { Order_Item } from "../model/Order_Item.mjs";
 import { MenuItem } from "../model/MenuItem.mjs";
-import { Table }  from "../model/Table.mjs";
+import { Table } from "../model/Table.mjs";
 import { Op } from '@sequelize/core';
 import { sequelize } from "../config/database.mjs";
 import TableAvailabilityService from "../services/TableAvailabilityService.mjs";
+import InventoryService from "../services/inventoryService.mjs";
 
 export class OrderProcessingController {
     
-    // ✅ Create complete order with items (INTEGRATED)
+    // ✅ Create complete order with items (INTEGRATED WITH INVENTORY)
     static async createCompleteOrder(req, res) {
         const { table_id, order_items, customer_notes } = req.body;
         
@@ -20,13 +22,37 @@ export class OrderProcessingController {
                 });
             }
 
-            // Use TableAvailabilityService for comprehensive check
+            // Check table availability
             const availability = await TableAvailabilityService.canAcceptImmediateOrder(table_id);
-            
             if (!availability.available) {
                 return res.status(400).json({ 
                     error: `Cannot place order: ${availability.reason}` 
                 });
+            }
+
+            // Check inventory availability before creating order
+            const inventoryChecks = [];
+            for (const item of order_items) {
+                if (!item.menu_item_id || !item.quantity) {
+                    return res.status(400).json({
+                        error: 'Each order item must have menu_item_id and quantity'
+                    });
+                }
+
+                const inventoryCheck = await InventoryService.checkMenuItemAvailability(
+                    item.menu_item_id, 
+                    item.quantity
+                );
+                
+                if (!inventoryCheck.available) {
+                    return res.status(400).json({
+                        error: `Insufficient inventory for item`,
+                        details: inventoryCheck.reason,
+                        menu_item_id: item.menu_item_id,
+                        insufficient_ingredients: inventoryCheck.insufficient_ingredients
+                    });
+                }
+                inventoryChecks.push(inventoryCheck);
             }
 
             const result = await sequelize.transaction(async (t) => {
@@ -35,10 +61,6 @@ export class OrderProcessingController {
                 const menuItems = [];
                 
                 for (const item of order_items) {
-                    if (!item.menu_item_id || !item.quantity) {
-                        throw new Error('Each order item must have menu_item_id and quantity');
-                    }
-
                     const menuItem = await MenuItem.findByPk(item.menu_item_id, { transaction: t });
                     if (!menuItem) {
                         throw new Error(`Menu item with ID ${item.menu_item_id} not found`);
@@ -76,16 +98,33 @@ export class OrderProcessingController {
                 
                 await Order_Item.bulkCreate(orderItemsData, { transaction: t });
                 
-                // 4. Update table status using service
+                // 4. Update table status
                 await TableAvailabilityService.updateTableStatus(table_id, 'occupied');
                 
                 return { order, order_items: orderItemsData };
             });
+
+            // Deduct inventory AFTER successful order creation
+            try {
+                const inventoryResult = await InventoryService.deductInventoryForOrder(result.order.id);
+                console.log('📦 Inventory updated:', inventoryResult);
+                
+                // Include low stock alerts in response
+                if (inventoryResult.low_stock_alerts && inventoryResult.low_stock_alerts.length > 0) {
+                    result.low_stock_alerts = inventoryResult.low_stock_alerts;
+                }
+            } catch (inventoryError) {
+                console.error('⚠️ Inventory deduction failed, but order was created:', inventoryError);
+                // Don't fail the order if inventory update fails, but log it
+                result.inventory_warning = 'Order created but inventory update failed';
+            }
             
             res.status(201).json({
                 message: 'Order created successfully',
                 order: result.order,
-                items: result.order_items
+                items: result.order_items,
+                ...(result.low_stock_alerts && { low_stock_alerts: result.low_stock_alerts }),
+                ...(result.inventory_warning && { warning: result.inventory_warning })
             });
             
         } catch (error) {
@@ -97,13 +136,12 @@ export class OrderProcessingController {
         }
     }
     
-    // ✅ Enhanced cancel order (INTEGRATED)
+    // ✅ Enhanced cancel order (INTEGRATED WITH INVENTORY RESTORATION)
     static async cancelOrder(req, res) {
         const { id } = req.params;
         const { cancellation_reason } = req.body;
         
         try {
-            // Validate cancellation_reason is provided
             if (!cancellation_reason || cancellation_reason.trim() === '') {
                 return res.status(400).json({ 
                     error: 'Cancellation reason is required' 
@@ -122,15 +160,21 @@ export class OrderProcessingController {
             }
             
             await sequelize.transaction(async (t) => {
-                // Update order status with required cancellation reason
                 await order.update({ 
                     order_status: 'cancelled',
                     cancellation_reason: cancellation_reason.trim()
                 }, { transaction: t });
                 
-                // Free up the table using service
                 await TableAvailabilityService.updateTableStatus(order.table_id, 'available');
             });
+
+            // Restore inventory for cancelled order
+            try {
+                await InventoryService.restoreInventoryForOrder(id);
+                console.log(`📦 Inventory restored for cancelled order ${id}`);
+            } catch (inventoryError) {
+                console.error('⚠️ Inventory restoration failed for cancelled order:', inventoryError);
+            }
             
             res.json({ 
                 message: 'Order cancelled successfully', 
@@ -146,7 +190,7 @@ export class OrderProcessingController {
         }
     }
     
-    // ✅ Order status update with validation (INTEGRATED)
+    // ✅ Order status update with validation (INTEGRATED WITH INVENTORY)
     static async updateOrderStatus(req, res) {
         const { id } = req.params;
         const { status } = req.body;
@@ -178,7 +222,17 @@ export class OrderProcessingController {
             
             await order.update({ order_status: status });
             
-            // If order is completed or cancelled, free up the table using service
+            // If order is cancelled, restore inventory
+            if (status === 'cancelled') {
+                try {
+                    await InventoryService.restoreInventoryForOrder(id);
+                    console.log(`📦 Inventory restored for cancelled order ${id}`);
+                } catch (inventoryError) {
+                    console.error('⚠️ Inventory restoration failed for cancelled order:', inventoryError);
+                }
+            }
+            
+            // If order is completed or cancelled, free up the table
             if (status === 'completed' || status === 'cancelled') {
                 await TableAvailabilityService.updateTableStatus(order.table_id, 'available');
             }
@@ -292,9 +346,7 @@ export class OrderProcessingController {
         }
     }
     
-
-  
-       // ✅ Enhanced update order
+    // ✅ Enhanced update order
     static async updateOrder(req, res) {
         const { id } = req.params;
         const { table_id, customer_notes, preparation_notes } = req.body;
@@ -349,11 +401,8 @@ export class OrderProcessingController {
             });
         }
     }
-   
     
-   
-    
-    // ✅ Add items to existing order
+    // ✅ Add items to existing order (WITH INVENTORY CHECK)
     static async addItemsToOrder(req, res) {
         const { id } = req.params;
         const { order_items } = req.body;
@@ -361,6 +410,22 @@ export class OrderProcessingController {
         try {
             if (!order_items || !Array.isArray(order_items) || order_items.length === 0) {
                 return res.status(400).json({ error: 'Order items are required' });
+            }
+
+            // Check inventory availability before adding items
+            for (const item of order_items) {
+                const inventoryCheck = await InventoryService.checkMenuItemAvailability(
+                    item.menu_item_id, 
+                    item.quantity
+                );
+
+                if (!inventoryCheck.available) {
+                    return res.status(400).json({
+                        error: `Insufficient inventory for menu item ID ${item.menu_item_id}`,
+                        details: inventoryCheck.reason,
+                        insufficient_ingredients: inventoryCheck.insufficient_ingredients
+                    });
+                }
             }
 
             const result = await sequelize.transaction(async (t) => {
@@ -408,10 +473,25 @@ export class OrderProcessingController {
                 
                 return newOrderItems;
             });
+
+            // Deduct inventory AFTER successfully adding items
+            try {
+                const inventoryResult = await InventoryService.deductInventoryForOrder(id);
+                console.log('📦 Inventory updated for added items:', inventoryResult);
+                
+                if (inventoryResult.low_stock_alerts && inventoryResult.low_stock_alerts.length > 0) {
+                    result.low_stock_alerts = inventoryResult.low_stock_alerts;
+                }
+            } catch (inventoryError) {
+                console.error('⚠️ Inventory deduction failed for added items:', inventoryError);
+                result.inventory_warning = 'Items added but inventory update failed';
+            }
             
             res.json({
                 message: 'Items added to order successfully',
-                added_items: result
+                added_items: result,
+                ...(result.low_stock_alerts && { low_stock_alerts: result.low_stock_alerts }),
+                ...(result.inventory_warning && { warning: result.inventory_warning })
             });
             
         } catch (error) {
@@ -423,7 +503,7 @@ export class OrderProcessingController {
         }
     }
     
-    // ✅ Remove item from order
+    // ✅ Remove item from order (WITH INVENTORY RESTORATION)
     static async removeItemFromOrder(req, res) {
         const { orderId, itemId } = req.params;
         
@@ -464,6 +544,14 @@ export class OrderProcessingController {
                 
                 return { removed_item: orderItem, new_total: newTotal };
             });
+
+            // Restore inventory for removed item
+            try {
+                await InventoryService.restoreInventoryForOrder(orderId);
+                console.log(`📦 Inventory restored after removing item from order ${orderId}`);
+            } catch (inventoryError) {
+                console.error('⚠️ Inventory restoration failed after item removal:', inventoryError);
+            }
             
             res.json({
                 message: 'Item removed from order successfully',
@@ -737,6 +825,93 @@ export class OrderProcessingController {
             res.status(500).json({ 
                 error: 'Failed to retrieve today\'s orders', 
                 details: error.message 
+            });
+        }
+    }
+    
+    // ✅ NEW: Check inventory availability for menu items
+    static async checkInventoryAvailability(req, res) {
+        const { menu_item_id, quantity } = req.body;
+        
+        try {
+            if (!menu_item_id || !quantity) {
+                return res.status(400).json({
+                    error: 'Menu item ID and quantity are required'
+                });
+            }
+            
+            const availability = await InventoryService.checkMenuItemAvailability(menu_item_id, quantity);
+            
+            res.json(availability);
+            
+        } catch (error) {
+            console.error('Check inventory availability error:', error);
+            res.status(500).json({
+                error: 'Failed to check inventory availability',
+                details: error.message
+            });
+        }
+    }
+    
+    // ✅ NEW: Get low stock alerts
+    static async getLowStockAlerts(req, res) {
+        try {
+            const alerts = await InventoryService.getLowStockAlerts();
+            
+            res.json(alerts);
+            
+        } catch (error) {
+            console.error('Get low stock alerts error:', error);
+            res.status(500).json({
+                error: 'Failed to retrieve low stock alerts',
+                details: error.message
+            });
+        }
+    }
+    
+    // ✅ NEW: Get order inventory details
+    static async getOrderInventoryDetails(req, res) {
+        const { id } = req.params;
+        
+        try {
+            const order = await Order.findByPk(id, {
+                include: [
+                    {
+                        model: Order_Item,
+                        include: [{
+                            model: MenuItem,
+                            attributes: ['id', 'name', 'current_stock', 'low_stock_threshold', 'track_inventory']
+                        }]
+                    }
+                ]
+            });
+            
+            if (!order) {
+                return res.status(404).json({ error: 'Order not found' });
+            }
+            
+            // Calculate inventory impact
+            const inventoryImpact = order.Order_Items.map(item => ({
+                menu_item_id: item.menu_item_id,
+                menu_item_name: item.MenuItem.name,
+                quantity_ordered: item.quantity,
+                current_stock: item.MenuItem.current_stock,
+                track_inventory: item.MenuItem.track_inventory,
+                low_stock_threshold: item.MenuItem.low_stock_threshold,
+                will_be_low_stock: item.MenuItem.track_inventory ? 
+                    (item.MenuItem.current_stock - item.quantity) <= item.MenuItem.low_stock_threshold : false
+            }));
+            
+            res.json({
+                order_id: id,
+                inventory_impact: inventoryImpact
+            });
+            
+        } catch (error) {
+            console.error('Get order inventory details error:', error);
+            res.status(500).json({
+                error: 'Failed to retrieve order inventory details',
+                details: error.message
             });
         }
     }
