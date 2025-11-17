@@ -44,6 +44,22 @@ export const MenuItem = sequelize.define("MenuItem", {
       allowNull: false,
       defaultValue: true,
    },
+
+   rack_inventory: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
+  current_stock: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0
+  },
+  low_stock_threshold: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 10
+  },
 }, 
 
 // Model options

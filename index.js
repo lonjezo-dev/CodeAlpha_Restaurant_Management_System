@@ -4,6 +4,7 @@ import { sequelize }  from "./config/database.mjs";
 import cors  from "cors"; 
 import apiRoutes from "./routes.mjs";
 import swaggerDocs from "./config/swagger.mjs";
+import { Recipe } from "./model/Recipe.mjs";
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -53,6 +54,7 @@ const initApp = async () => {
 
       // Sync all models
       await sequelize.sync();
+      await Recipe.sync();
 
 
       console.log("✅ All models synchronized successfully.");
