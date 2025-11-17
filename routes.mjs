@@ -1,10 +1,11 @@
+// routes/index.mjs
 import { createMenuItem, getAllMenuItems, getMenuItem, updateMenuItem, deleteMenuItem, deleteAllMenuItems } from "./controllers/MenuItemController.mjs";
 import express from "express";
 import { createTable, getAllTables, getTable, updateTable, deleteTable } from "./controllers/TableController.mjs";
 import { OrderProcessingController } from "./controllers/OrderProcessingController.mjs";
 import { createOrderItem, getAllOrderItems, getOrderItemById, updateOrderItem, deleteOrderItem } from "./controllers/OrderItemController.mjs";
 import { createReservation, getAllReservations, getReservationById, updateReservation, deleteReservation } from "./controllers/ReservationController.mjs";
-import { createInventoryItem, getAllInventoryItems, getInventoryItemById, updateInventoryItem, deleteInventoryItem } from "./controllers/InventoryController.mjs";
+import { InventoryController } from "./controllers/InventoryController.mjs";
 import  TableAvailabilityController from './controllers/TableAvailabilityController.mjs';
 
 const router = express.Router();
@@ -117,6 +118,16 @@ const router = express.Router();
  *           type: integer
  *         unit:
  *           type: string
+ *         category:
+ *           type: string
+ *         unit_cost:
+ *           type: number
+ *         supplier:
+ *           type: string
+ *         min_stock_level:
+ *           type: integer
+ *         reorder_quantity:
+ *           type: integer
  * 
  *     TableAvailabilitySearch:
  *       type: object
@@ -134,6 +145,54 @@ const router = express.Router();
  *         duration_minutes:
  *           type: integer
  *           description: Expected dining duration (default 90 minutes)
+ * 
+ *     InventoryQuantityUpdate:
+ *       type: object
+ *       required:
+ *         - quantity
+ *         - action
+ *       properties:
+ *         quantity:
+ *           type: number
+ *           description: Quantity to update
+ *         action:
+ *           type: string
+ *           enum: [add, subtract, set]
+ *           description: Action to perform
+ *         reason:
+ *           type: string
+ *           description: Reason for the update
+ * 
+ *     BulkInventoryUpdate:
+ *       type: object
+ *       required:
+ *         - updates
+ *       properties:
+ *         updates:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               inventory_id:
+ *                 type: integer
+ *               quantity:
+ *                 type: number
+ *               action:
+ *                 type: string
+ *                 enum: [add, subtract, set]
+ *               reason:
+ *                 type: string
+ * 
+ *     MenuItemAvailabilityCheck:
+ *       type: object
+ *       required:
+ *         - menu_item_id
+ *         - quantity
+ *       properties:
+ *         menu_item_id:
+ *           type: integer
+ *         quantity:
+ *           type: integer
  * 
  *     Error:
  *       type: object
@@ -1233,46 +1292,93 @@ router.put("/reservations/:id", updateReservation);
 router.delete("/reservations/:id", deleteReservation);
 
 // ====================================
-// INVENTORY ROUTES
+// INVENTORY ROUTES - ENHANCED
 // ====================================
 
 /**
  * @swagger
  * /inventory:
- *   post:
- *     summary: Create a new inventory item
+ *   get:
+ *     summary: Get all inventory items with filtering and pagination
  *     tags: [Inventory]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/Inventory'
+ *     parameters:
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *         description: Filter by category
+ *       - in: query
+ *         name: low_stock_only
+ *         schema:
+ *           type: boolean
+ *         description: Show only low stock items
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search by item name
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 50
+ *         description: Items per page
  *     responses:
- *       201:
- *         description: Inventory item created successfully
- *       400:
- *         description: Invalid input
+ *       200:
+ *         description: List of inventory items retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 inventory_items:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Inventory'
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     current_page:
+ *                       type: integer
+ *                     total_pages:
+ *                       type: integer
+ *                     total_items:
+ *                       type: integer
+ *                     has_next:
+ *                       type: boolean
+ *                     has_prev:
+ *                       type: boolean
  */
-router.post("/inventory", createInventoryItem);
+router.get("/inventory", InventoryController.getAllInventoryItems);
 
 /**
  * @swagger
- * /inventory:
+ * /inventory/categories:
  *   get:
- *     summary: Get all inventory items
+ *     summary: Get all inventory categories
  *     tags: [Inventory]
  *     responses:
  *       200:
- *         description: List of all inventory items
+ *         description: Inventory categories retrieved successfully
  *         content:
  *           application/json:
  *             schema:
  *               type: array
  *               items:
- *                 $ref: '#/components/schemas/Inventory'
+ *                 type: object
+ *                 properties:
+ *                   category:
+ *                     type: string
+ *                   item_count:
+ *                     type: integer
  */
-router.get("/inventory", getAllInventoryItems);
+router.get("/inventory/categories", InventoryController.getInventoryCategories);
 
 /**
  * @swagger
@@ -1297,7 +1403,27 @@ router.get("/inventory", getAllInventoryItems);
  *       404:
  *         description: Inventory item not found
  */
-router.get("/inventory/:id", getInventoryItemById);
+router.get("/inventory/:id", InventoryController.getInventoryItemById);
+
+/**
+ * @swagger
+ * /inventory:
+ *   post:
+ *     summary: Create a new inventory item
+ *     tags: [Inventory]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Inventory'
+ *     responses:
+ *       201:
+ *         description: Inventory item created successfully
+ *       400:
+ *         description: Invalid input
+ */
+router.post("/inventory", InventoryController.createInventoryItem);
 
 /**
  * @swagger
@@ -1324,7 +1450,7 @@ router.get("/inventory/:id", getInventoryItemById);
  *       404:
  *         description: Inventory item not found
  */
-router.put("/inventory/:id", updateInventoryItem);
+router.put("/inventory/:id", InventoryController.updateInventoryItem);
 
 /**
  * @swagger
@@ -1345,6 +1471,214 @@ router.put("/inventory/:id", updateInventoryItem);
  *       404:
  *         description: Inventory item not found
  */
-router.delete("/inventory/:id", deleteInventoryItem);
+router.delete("/inventory/:id", InventoryController.deleteInventoryItem);
+
+/**
+ * @swagger
+ * /inventory/{id}/quantity:
+ *   patch:
+ *     summary: Update inventory quantity (add, subtract, or set)
+ *     tags: [Inventory]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Inventory item ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/InventoryQuantityUpdate'
+ *     responses:
+ *       200:
+ *         description: Inventory quantity updated successfully
+ *       400:
+ *         description: Invalid input
+ *       404:
+ *         description: Inventory item not found
+ */
+router.patch("/inventory/:id/quantity", InventoryController.updateInventoryQuantity);
+
+/**
+ * @swagger
+ * /inventory/bulk-update:
+ *   post:
+ *     summary: Bulk update multiple inventory items
+ *     tags: [Inventory]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/BulkInventoryUpdate'
+ *     responses:
+ *       200:
+ *         description: Bulk update completed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 results:
+ *                   type: array
+ *                 summary:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                     successful:
+ *                       type: integer
+ *                     failed:
+ *                       type: integer
+ */
+router.post("/inventory/bulk-update", InventoryController.bulkUpdateInventory);
+
+/**
+ * @swagger
+ * /inventory/alerts/low-stock:
+ *   get:
+ *     summary: Get low stock alerts
+ *     tags: [Inventory]
+ *     responses:
+ *       200:
+ *         description: Low stock alerts retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 low_stock_menu_items:
+ *                   type: array
+ *                 low_stock_inventory:
+ *                   type: array
+ *                 alert_count:
+ *                   type: integer
+ */
+router.get("/inventory/alerts/low-stock", InventoryController.getLowStockAlerts);
+
+/**
+ * @swagger
+ * /inventory/suggestions/reorder:
+ *   get:
+ *     summary: Get reorder suggestions for low stock items
+ *     tags: [Inventory]
+ *     responses:
+ *       200:
+ *         description: Reorder suggestions retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 reorder_suggestions:
+ *                   type: array
+ *                 total_needing_reorder:
+ *                   type: integer
+ */
+router.get("/inventory/suggestions/reorder", InventoryController.getReorderSuggestions);
+
+/**
+ * @swagger
+ * /inventory/analytics/statistics:
+ *   get:
+ *     summary: Get inventory statistics and analytics
+ *     tags: [Inventory]
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Start date for statistics
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: End date for statistics
+ *     responses:
+ *       200:
+ *         description: Inventory statistics retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 summary:
+ *                   type: object
+ *                 category_stats:
+ *                   type: array
+ *                 low_stock_percentage:
+ *                   type: string
+ */
+router.get("/inventory/analytics/statistics", InventoryController.getInventoryStatistics);
+
+/**
+ * @swagger
+ * /inventory/check-availability:
+ *   post:
+ *     summary: Check menu item availability based on inventory
+ *     tags: [Inventory]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/MenuItemAvailabilityCheck'
+ *     responses:
+ *       200:
+ *         description: Availability checked successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 available:
+ *                   type: boolean
+ *                 reason:
+ *                   type: string
+ *                 insufficient_ingredients:
+ *                   type: array
+ */
+router.post("/inventory/check-availability", InventoryController.checkMenuItemAvailability);
+
+// ====================================
+// HEALTH CHECK ROUTE
+// ====================================
+
+/**
+ * @swagger
+ * /health:
+ *   get:
+ *     summary: Health check endpoint
+ *     tags: [System]
+ *     responses:
+ *       200:
+ *         description: System is healthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                 service:
+ *                   type: string
+ */
+router.get("/health", (req, res) => {
+    res.json({ 
+        status: 'OK', 
+        timestamp: new Date().toISOString(),
+        service: 'Restaurant Management API'
+    });
+});
 
 export default router;
