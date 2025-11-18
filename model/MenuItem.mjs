@@ -45,7 +45,7 @@ export const MenuItem = sequelize.define("MenuItem", {
       defaultValue: true,
    },
 
-   rack_inventory: {
+   track_inventory: {
     type: DataTypes.BOOLEAN,
     allowNull: false,
     defaultValue: false

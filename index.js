@@ -54,7 +54,7 @@ const initApp = async () => {
       console.log("✅ Database connection established successfully.");
 
       // Sync all models
-      await sequelize.sync();
+      await sequelize.sync({alter:true});
       // await Inventory.sync()
 
 
