@@ -7,7 +7,7 @@ export const createMenuItem = (req, res) => {
 
      MenuItem.create({ name, description, price, category,current_stock,track_inventory,low_stock_threshold })
          .then((menuItem) => {
-            //  res.status(201).json(menuItem);
+             res.status(201).json(menuItem);
              res.status(201).json({ message: "Menu item created successfully"});
 
          })
