@@ -266,6 +266,8 @@ class InventoryService {
   static async updateInventoryItem(inventoryId, newQuantity, action = 'set') {
     try {
       const inventoryItem = await Inventory.findByPk(inventoryId);
+
+      console.log(typeof(inventoryItem.quantity))
       
       if (!inventoryItem) {
         throw new Error('Inventory item not found');

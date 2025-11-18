@@ -189,6 +189,7 @@ export class InventoryController {
     // ✅ Update inventory quantity (add, subtract, set)
     static async updateInventoryQuantity(req, res) {
         const { id } = req.params;
+        console.log(id)
         const { quantity, action = 'set', reason } = req.body;
         
         const validActions = ['add', 'subtract', 'set'];

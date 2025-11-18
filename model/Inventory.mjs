@@ -23,8 +23,8 @@ export const Inventory = sequelize.define("Inventory", {
     },
     
     // Inventory Quantity
-    quantity: { 
-        type: DataTypes.DECIMAL(10, 2),
+     quantity: { 
+        type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 0,
     },
