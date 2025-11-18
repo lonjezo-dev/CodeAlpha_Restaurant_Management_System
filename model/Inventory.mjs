@@ -49,15 +49,15 @@ export const Inventory = sequelize.define("Inventory", {
     },
     
     // Minimum stock level for alerts
-    min_stock_level: {
-        type: DataTypes.DECIMAL(10, 2),
+   min_stock_level: {
+        type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 0,
     },
     
     // Quantity to reorder when low
     reorder_quantity: {
-        type: DataTypes.DECIMAL(10, 2),
+        type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 0,
     },
