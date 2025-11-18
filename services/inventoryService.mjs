@@ -4,6 +4,7 @@ import { MenuItem } from '../model/MenuItem.mjs';
 import { Recipe } from '../model/Recipe.mjs';
 import { Order_Item } from '../model/Order_Item.mjs';
 import { Op } from '@sequelize/core';
+import { sequelize } from '../config/database.mjs';
 
 class InventoryService {
   
@@ -267,7 +268,7 @@ class InventoryService {
     try {
       const inventoryItem = await Inventory.findByPk(inventoryId);
 
-      console.log(typeof(inventoryItem.quantity))
+      // console.log(typeof(inventoryItem.quantity))
       
       if (!inventoryItem) {
         throw new Error('Inventory item not found');
