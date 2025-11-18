@@ -5,6 +5,7 @@ import cors  from "cors";
 import apiRoutes from "./routes.mjs";
 import swaggerDocs from "./config/swagger.mjs";
 import { Recipe } from "./model/Recipe.mjs";
+import { Inventory } from "./model/Inventory.mjs";
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -54,7 +55,8 @@ const initApp = async () => {
 
       // Sync all models
       await sequelize.sync();
-    
+      // await Inventory.sync()
+
 
 
       console.log("✅ All models synchronized successfully.");
