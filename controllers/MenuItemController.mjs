@@ -3,9 +3,9 @@ import { MenuItem } from "../model/MenuItem.mjs";
 
 export const createMenuItem = (req, res) => {
      // Call the create function on the Menu Item model, and pass the data that you receive.
-     const { name, description, price, category } = req.body;
+     const { name, description, price, category,current_stock,track_inventory,low_stock_threshold } = req.body;
 
-     MenuItem.create({ name, description, price, category })
+     MenuItem.create({ name, description, price, category,current_stock,track_inventory,low_stock_threshold })
          .then((menuItem) => {
             //  res.status(201).json(menuItem);
              res.status(201).json({ message: "Menu item created successfully"});
@@ -19,7 +19,7 @@ export const createMenuItem = (req, res) => {
 export const getAllMenuItems = (req, res) => {
     MenuItem.findAll(
         {
-      attributes: ['id','name', 'description', 'price', 'category'],
+      attributes: ['id','name', 'description', 'price', 'category','current_stock','track_inventory','low_stock_threshold'],
         // where: {}
    }).then((result) => {
          return res.json(result);
@@ -36,7 +36,7 @@ export const getMenuItem = (req, res) => {
     const id = req.params.id;
     // console.log(id);
     MenuItem.findByPk(id,{
-         attributes: ['id','name', 'description', 'price', 'category'],
+         attributes: ['id','name', 'description', 'price', 'category','current_stock','track_inventory','low_stock_threshold'],
     })
         .then((menuItem) => {
                 res.json(menuItem);
