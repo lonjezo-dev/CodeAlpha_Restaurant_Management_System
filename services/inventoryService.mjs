@@ -29,19 +29,54 @@ class InventoryService {
         ]
       });
 
+      console.log('📦 Order items count:', orderItems.length);
+
+      // Debug data structure
+      console.log('🔍 Debugging data structure:');
+      orderItems.forEach((item, index) => {
+        console.log(`OrderItem ${index}:`, {
+          id: item.id,
+          menu_item_id: item.menu_item_id,
+          hasMenuItem: !!item.MenuItem,
+          menuItemId: item.MenuItem?.id,
+          menuItemName: item.MenuItem?.name,
+          menuItemData: item.MenuItem ? {
+            id: item.MenuItem.id,
+            name: item.MenuItem.name,
+            track_inventory: item.MenuItem.track_inventory,
+            current_stock: item.MenuItem.current_stock
+          } : 'NO MENU ITEM'
+        });
+      });
+
       const inventoryUpdates = [];
       const lowStockAlerts = [];
 
       for (const orderItem of orderItems) {
+        // Access the menuItem properly - check if it exists
         const menuItem = orderItem.MenuItem;
+
+        console.log('🔍 MenuItem:', menuItem ? `Found (ID: ${menuItem.id})` : 'NOT FOUND');
+
+        // Skip if menuItem is not found
+        if (!menuItem) {
+          console.warn(`⚠️ MenuItem not found for order item ${orderItem.id}`);
+          continue;
+        }
+
+        console.log(`📋 Processing: ${menuItem.name}, Track Inventory: ${menuItem.track_inventory}`);
         
         // If menu item tracks inventory, deduct from its stock
         if (menuItem.track_inventory) {
-          const newStock = menuItem.current_stock - orderItem.quantity;
+          const currentStock = parseFloat(menuItem.current_stock);
+          const newStock = currentStock - orderItem.quantity;
+          
           await menuItem.update({ 
             current_stock: Math.max(0, newStock),
             is_available: newStock > 0
           });
+
+          console.log(`📊 Updated menu item stock: ${currentStock} -> ${newStock}`);
 
           // Check for low stock alert
           if (newStock <= menuItem.low_stock_threshold) {
@@ -55,15 +90,23 @@ class InventoryService {
         }
 
         // Deduct ingredients from inventory based on recipe
-        if (menuItem.Recipes && menuItem.Recipes.length > 0) {
-          for (const recipe of menuItem.Recipes) {
+        // Check if Recipes exists and is an array
+        const recipes = menuItem.Recipes || [];
+        if (recipes.length > 0) {
+          for (const recipe of recipes) {
             const inventoryItem = recipe.Inventory;
+            if (!inventoryItem) {
+              console.warn(`⚠️ Inventory item not found for recipe ${recipe.id}`);
+              continue;
+            }
+
             const quantityToDeduct = recipe.quantity_required * orderItem.quantity;
-            const newQuantity = inventoryItem.quantity - quantityToDeduct;
+            const currentInventoryQty = parseFloat(inventoryItem.quantity);
+            const newQuantity = currentInventoryQty - quantityToDeduct;
 
             inventoryUpdates.push({
               inventory_item_id: inventoryItem.id,
-              old_quantity: inventoryItem.quantity,
+              old_quantity: currentInventoryQty,
               new_quantity: Math.max(0, newQuantity),
               quantity_deducted: quantityToDeduct
             });
@@ -73,8 +116,10 @@ class InventoryService {
               last_updated: new Date()
             });
 
+            console.log(`📦 Updated inventory: ${inventoryItem.item_name}, ${currentInventoryQty} -> ${newQuantity}`);
+
             // Check for low inventory alert
-            if (newQuantity <= 5) { // Threshold for inventory items
+            if (newQuantity <= 5) {
               lowStockAlerts.push({
                 inventory_item_id: inventoryItem.id,
                 inventory_item_name: inventoryItem.item_name,
@@ -84,6 +129,8 @@ class InventoryService {
               });
             }
           }
+        } else {
+          console.log(`📝 No recipes found for menu item: ${menuItem.name}`);
         }
       }
 
@@ -179,26 +226,43 @@ class InventoryService {
         ]
       });
 
+      console.log('📦 Order items count for restoration:', orderItems.length);
+
       const inventoryRestorations = [];
 
       for (const orderItem of orderItems) {
         const menuItem = orderItem.MenuItem;
         
+        // Skip if menuItem is not found
+        if (!menuItem) {
+          console.warn(`⚠️ MenuItem not found for order item ${orderItem.id}`);
+          continue;
+        }
+        
         // Restore menu item stock
         if (menuItem.track_inventory) {
-          const newStock = menuItem.current_stock + orderItem.quantity;
+          const currentStock = parseFloat(menuItem.current_stock);
+          const newStock = currentStock + orderItem.quantity;
           await menuItem.update({ 
             current_stock: newStock,
             is_available: true
           });
+          console.log(`📊 Restored menu item stock: ${currentStock} -> ${newStock}`);
         }
 
         // Restore ingredient inventory
-        if (menuItem.Recipes && menuItem.Recipes.length > 0) {
-          for (const recipe of menuItem.Recipes) {
+        const recipes = menuItem.Recipes || [];
+        if (recipes.length > 0) {
+          for (const recipe of recipes) {
             const inventoryItem = recipe.Inventory;
+            if (!inventoryItem) {
+              console.warn(`⚠️ Inventory item not found for recipe ${recipe.id}`);
+              continue;
+            }
+
             const quantityToRestore = recipe.quantity_required * orderItem.quantity;
-            const newQuantity = inventoryItem.quantity + quantityToRestore;
+            const currentInventoryQty = parseFloat(inventoryItem.quantity);
+            const newQuantity = currentInventoryQty + quantityToRestore;
 
             inventoryRestorations.push({
               inventory_item_id: inventoryItem.id,
@@ -210,6 +274,8 @@ class InventoryService {
               quantity: newQuantity,
               last_updated: new Date()
             });
+
+            console.log(`📦 Restored inventory: ${inventoryItem.item_name}, ${currentInventoryQty} -> ${newQuantity}`);
           }
         }
       }
@@ -267,24 +333,26 @@ class InventoryService {
   static async updateInventoryItem(inventoryId, newQuantity, action = 'set') {
     try {
       const inventoryItem = await Inventory.findByPk(inventoryId);
-
-      // console.log(typeof(inventoryItem.quantity))
       
       if (!inventoryItem) {
         throw new Error('Inventory item not found');
       }
 
+      // Parse quantities to ensure they are numbers
+      const currentQuantity = parseFloat(inventoryItem.quantity);
+      const quantityNum = parseFloat(newQuantity);
+
       let finalQuantity;
       switch (action) {
         case 'add':
-          finalQuantity = inventoryItem.quantity + newQuantity;
+          finalQuantity = currentQuantity + quantityNum;
           break;
         case 'subtract':
-          finalQuantity = Math.max(0, inventoryItem.quantity - newQuantity);
+          finalQuantity = Math.max(0, currentQuantity - quantityNum);
           break;
         case 'set':
         default:
-          finalQuantity = newQuantity;
+          finalQuantity = quantityNum;
           break;
       }
 
@@ -293,15 +361,100 @@ class InventoryService {
         last_updated: new Date()
       });
 
+      console.log(`📦 Manual inventory update: ${inventoryItem.item_name}, ${currentQuantity} -> ${finalQuantity}`);
+
       return {
         inventory_item: inventoryItem,
-        old_quantity: inventoryItem.quantity,
+        old_quantity: currentQuantity,
         new_quantity: finalQuantity,
         action: action
       };
 
     } catch (error) {
       throw new Error(`Inventory update failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Bulk update inventory (for stock receiving)
+   */
+  static async bulkUpdateInventory(updates) {
+    try {
+      const results = [];
+      
+      for (const update of updates) {
+        const { inventory_id, quantity, action = 'add', reason } = update;
+        
+        try {
+          const result = await this.updateInventoryItem(inventory_id, quantity, action);
+          results.push({
+            inventory_id,
+            success: true,
+            ...result,
+            reason: reason || 'Bulk update'
+          });
+        } catch (itemError) {
+          results.push({
+            inventory_id,
+            success: false,
+            error: itemError.message
+          });
+        }
+      }
+
+      return results;
+
+    } catch (error) {
+      throw new Error(`Bulk inventory update failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get inventory statistics
+   */
+  static async getInventoryStatistics() {
+    try {
+      const totalItems = await Inventory.count();
+      const lowStockItems = await Inventory.count({
+        where: {
+          quantity: {
+            [Op.lte]: 5
+          }
+        }
+      });
+      
+      const outOfStockItems = await Inventory.count({
+        where: {
+          quantity: 0
+        }
+      });
+
+      const totalInventoryValue = await Inventory.sum('quantity * unit_cost');
+
+      const categoryStats = await Inventory.findAll({
+        attributes: [
+          'category',
+          [sequelize.fn('COUNT', sequelize.col('id')), 'item_count'],
+          [sequelize.fn('SUM', sequelize.col('quantity')), 'total_quantity'],
+          [sequelize.fn('SUM', sequelize.literal('quantity * unit_cost')), 'total_value']
+        ],
+        group: ['category'],
+        raw: true
+      });
+
+      return {
+        summary: {
+          total_items: totalItems,
+          low_stock_items: lowStockItems,
+          out_of_stock_items: outOfStockItems,
+          total_inventory_value: totalInventoryValue || 0
+        },
+        category_stats: categoryStats,
+        low_stock_percentage: totalItems > 0 ? (lowStockItems / totalItems * 100).toFixed(2) : 0
+      };
+
+    } catch (error) {
+      throw new Error(`Failed to get inventory statistics: ${error.message}`);
     }
   }
 }
